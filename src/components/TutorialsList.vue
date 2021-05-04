@@ -2,10 +2,16 @@
   <div class="list row">
     <div class="col-md-8">
       <div class="input-group mb-3">
-        <input type="text" class="form-control" placeholder="Search by title"
-          v-model="title"/>
+        <input 
+          type="text"
+          class="form-control"
+          placeholder="Search by title"
+          v-model="title"
+        />
         <div class="input-group-append">
-          <button class="btn btn-outline-secondary" type="button"
+          <button 
+            class="btn btn-outline-secondary" 
+            type="button"
             @click="searchTitle"
           >
             Search
@@ -13,6 +19,20 @@
         </div>
       </div>
     </div>
+
+    <div class="col-md-12">      
+      <div class="col-md-8">
+        <b-pagination
+          v-model="page"
+          :total-rows="count"
+          :per-page="pageSize"
+          prev-text="Prev"
+          next-text="Next"
+          @change="handlePageChange"
+        ></b-pagination>
+      </div>
+    </div>
+
     <div class="col-md-6">
       <h4>Tutorials List</h4>
       <ul class="list-group">
@@ -23,12 +43,31 @@
           @click="setActiveTutorial(tutorial, index)"
         >
           {{ tutorial.title }}
+         <p v-if="tutorial.comments">           
+            <span v-for="(comment, index) in tutorial.comments"
+                 :key="index"
+                 >
+              nb_comments: {{tutorial.comments.length}}
+            </span>
+          </p>
         </li>
       </ul>
 
-      <button class="m-3 btn btn-sm btn-danger" @click="removeAllTutorials">
+      <button class="m-3 btn btn-sm btn-danger" style="float:left" @click="removeAllTutorials">
         Remove All
       </button>
+      <div class="md-4" style="margin-top:15px">
+        Items per Page:
+        <select v-model="pageSize" @change="handlePageSizeChange($event)">
+          <option v-for="size in pageSizes" :key="size" :value="size">
+            {{ size }}
+          </option>
+        </select>
+      </div>
+      <div class="mb-12" style="margin-top:15px">
+        Total Items:        
+            {{ totalItems }}
+      </div>
     </div>
     <div class="col-md-6">
       <div v-if="currentTutorial">
@@ -42,7 +81,10 @@
         <div>
           <label><strong>Status:</strong></label> {{ currentTutorial.published ? "Published" : "Pending" }}
         </div>
-
+        <div>
+          <label><strong>Comments:</strong></label>
+          {{currentTutorial.comments.length}}
+        </div>
         <a class="badge badge-warning"
           :href="'/tutorials/' + currentTutorial.id"
         >
@@ -65,21 +107,65 @@ export default {
   data() {
     return {
       tutorials: [],
+      totalItems: "",
       currentTutorial: null,
       currentIndex: -1,
-      title: ""
+      title: "",
+
+      page: 1,
+      count: 0,
+      pageSize: 3,
+
+      pageSizes: [3, 5, 10, 15],
     };
   },
   methods: {
+    getRequestParams(searchTitle, page, pageSize) {
+      let params = {};
+
+      if (searchTitle) {
+        params["title"] = searchTitle;
+      }
+
+      if (page) {
+        params["page"] = page - 1;
+      }
+
+      if (pageSize) {
+        params["size"] = pageSize;
+      }
+
+      return params;
+    },
+
     retrieveTutorials() {
-      TutorialDataService.getAll()
+      const params = this.getRequestParams(
+        this.searchTitle,
+        this.page,
+        this.pageSize
+      );    
+      TutorialDataService.getAll(params)
         .then(response => {
-          this.tutorials = response.data;
+          const { tutorials, totalItems } = response.data;
+          this.tutorials = tutorials;
+          this.count = totalItems;
+          this.totalItems = totalItems;
           console.log(response.data);
         })
         .catch(e => {
           console.log(e);
         });
+    },
+
+    handlePageChange(value) {
+      this.page = value;
+      this.retrieveTutorials();
+    },
+
+    handlePageSizeChange(event) {
+      this.pageSize = event.target.value;
+      this.page = 1;
+      this.retrieveTutorials();
     },
 
     refreshList() {
@@ -90,6 +176,7 @@ export default {
 
     setActiveTutorial(tutorial, index) {
       this.currentTutorial = tutorial;
+      console.log(this.currentTutorial);
       this.currentIndex = index;
     },
 

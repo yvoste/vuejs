@@ -1,8 +1,8 @@
 import http from "../http-common";
 
 class TutorialDataService {
-  getAll() {
-    return http.get("/tutorials");
+  getAll(params) {
+    return http.get("/tutorials", { params });
   }
 
   get(id) {
@@ -26,7 +26,7 @@ class TutorialDataService {
   }
 
   findByTitle(title) {
-    return http.get(`/tutorials?title=${title}`);
+    return http.get(`/tutorials/tit/?title=${title}`);
   }
 }
 
