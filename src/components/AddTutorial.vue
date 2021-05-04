@@ -1,35 +1,42 @@
 <template>
-  <div class="submit-form">
+  <div class="submit-form mt-3 mx-auto">
+    <p class="headline">Add Tutorial</p>
+
     <div v-if="!submitted">
-      <div class="form-group">
-        <label for="title">Title</label>
-        <input
-          type="text"
-          class="form-control"
-          id="title"
-          required
+      <v-form ref="form" lazy-validation>
+        <v-text-field
           v-model="tutorial.title"
-          name="title"
-        />
-      </div>
-
-      <div class="form-group">
-        <label for="description">Description</label>
-        <input
-          class="form-control"
-          id="description"
+          :rules="[(v) => !!v || 'Title is required']"
+          label="Title"
           required
-          v-model="tutorial.description"
-          name="description"
-        />
-      </div>
+        ></v-text-field>
 
-      <button @click="saveTutorial" class="btn btn-success">Submit</button>
+        <v-textarea
+          v-model="tutorial.description"
+          :rules="[(v) => !!v || 'Description is required']"
+          label="Description"
+          required
+          counter=520
+        ></v-textarea>
+      </v-form>
+
+      <v-btn color="primary" class="mt-3" @click="saveTutorial">Submit</v-btn>
     </div>
 
     <div v-else>
-      <h4>You submitted successfully!</h4>
-      <button class="btn btn-success" @click="newTutorial">Add</button>
+      <v-card class="mx-auto">
+        <v-card-title>
+          Submitted successfully!
+        </v-card-title>
+
+        <v-card-subtitle>
+          Click the button to add new Tutorial.
+        </v-card-subtitle>
+
+        <v-card-actions>
+          <v-btn color="success" @click="newTutorial">Add</v-btn>
+        </v-card-actions>
+      </v-card>
     </div>
   </div>
 </template>
@@ -45,40 +52,39 @@ export default {
         id: null,
         title: "",
         description: "",
-        published: false
+        published: false,
       },
-      submitted: false
+      submitted: false,
     };
   },
   methods: {
     saveTutorial() {
       var data = {
         title: this.tutorial.title,
-        description: this.tutorial.description
+        description: this.tutorial.description,
       };
 
       TutorialDataService.create(data)
-        .then(response => {
+        .then((response) => {
           this.tutorial.id = response.data.id;
           console.log(response.data);
           this.submitted = true;
         })
-        .catch(e => {
+        .catch((e) => {
           console.log(e);
         });
     },
-    
+
     newTutorial() {
       this.submitted = false;
       this.tutorial = {};
-    }
-  }
+    },
+  },
 };
 </script>
 
 <style>
 .submit-form {
   max-width: 300px;
-  margin: auto;
 }
 </style>

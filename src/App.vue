@@ -1,26 +1,27 @@
 <template>
-  <div id="app">
-    <nav class="navbar navbar-expand navbar-dark bg-dark">
-      <router-link to="/" class="navbar-brand">bezKoder</router-link>
-      <div class="navbar-nav mr-auto">
-        <li class="nav-item">
-          <router-link to="/tutorials" class="nav-link">Tutorials</router-link>
-        </li>
-        <li class="nav-item">
-          <router-link to="/add" class="nav-link">Add</router-link>
-        </li>
+  <v-app>
+    <v-app-bar app dark>
+      <div class="d-flex align-center mr-2">
+        bezKoder
       </div>
-    </nav>
 
-    <div class="container mt-3">
+      <v-btn to="/tutorials" text>
+        Tutorials
+      </v-btn>
+
+      <v-btn to="/add" text>
+        Add
+      </v-btn>
+    </v-app-bar>
+
+    <v-main>
       <router-view />
-    </div>
-  </div>
+    </v-main>
+  </v-app>
 </template>
 
 <script>
 export default {
-  name: "app"
+  name: "app",
 };
 </script>
-

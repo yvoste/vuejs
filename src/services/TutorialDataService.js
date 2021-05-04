@@ -28,6 +28,10 @@ class TutorialDataService {
   findByTitle(title) {
     return http.get(`/tutorials/tit/?title=${title}`);
   }
+
+  getComment(id) {
+    return http.get(`/tutorials/comments/?id=${id}`);
+  }
 }
 
 export default new TutorialDataService();

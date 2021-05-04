@@ -1,27 +1,41 @@
 <template>
-  <div class="list row">
-    <div class="col-md-8">
-      <div class="input-group mb-3">
-        <input 
-          type="text"
-          class="form-control"
-          placeholder="Search by title"
-          v-model="title"
-        />
-        <div class="input-group-append">
-          <button 
-            class="btn btn-outline-secondary" 
-            type="button"
-            @click="searchTitle"
-          >
-            Search
-          </button>
-        </div>
-      </div>
-    </div>
 
+  <v-row align="center" class="list px-3 mx-auto">
+    <v-col cols="12" md="8">
+      <v-text-field v-model="title" label="Search by Title"></v-text-field>
+    </v-col>
+
+    <v-col cols="12" md="4">
+      <v-btn small @click="searchTitle">
+        Search
+      </v-btn>
+    </v-col>
+    
+    <v-col cols="12" sm="12">
+      <v-card class="mx-auto" tile>
+        <v-card-title>Tutorials</v-card-title>
+
+        <v-data-table
+          :headers="headers"
+          :items="tutorials"
+          disable-pagination
+          :hide-default-footer="true"
+        >
+          <template v-slot:[`item.actions`]="{ item }">
+            <v-icon small class="mr-2" @click="editTutorial(item.id)">mdi-pencil</v-icon>
+            <v-icon small @click="deleteTutorial(item.id)">mdi-delete</v-icon>
+          </template>
+        </v-data-table>
+
+        <v-card-actions v-if="tutorials.length > 0">
+          <v-btn small color="error" @click="removeAllTutorials">
+            Remove All
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-col>
     <div class="col-md-12">      
-      <div class="col-md-8">
+      <div class="col-md-8" style="float:left">
         <b-pagination
           v-model="page"
           :total-rows="count"
@@ -31,31 +45,6 @@
           @change="handlePageChange"
         ></b-pagination>
       </div>
-    </div>
-
-    <div class="col-md-6">
-      <h4>Tutorials List</h4>
-      <ul class="list-group">
-        <li class="list-group-item"
-          :class="{ active: index == currentIndex }"
-          v-for="(tutorial, index) in tutorials"
-          :key="index"
-          @click="setActiveTutorial(tutorial, index)"
-        >
-          {{ tutorial.title }}
-         <p v-if="tutorial.comments">           
-            <span v-for="(comment, index) in tutorial.comments"
-                 :key="index"
-                 >
-              nb_comments: {{tutorial.comments.length}}
-            </span>
-          </p>
-        </li>
-      </ul>
-
-      <button class="m-3 btn btn-sm btn-danger" style="float:left" @click="removeAllTutorials">
-        Remove All
-      </button>
       <div class="md-4" style="margin-top:15px">
         Items per Page:
         <select v-model="pageSize" @change="handlePageSizeChange($event)">
@@ -69,54 +58,28 @@
             {{ totalItems }}
       </div>
     </div>
-    <div class="col-md-6">
-      <div v-if="currentTutorial">
-        <h4>Tutorial</h4>
-        <div>
-          <label><strong>Title:</strong></label> {{ currentTutorial.title }}
-        </div>
-        <div>
-          <label><strong>Description:</strong></label> {{ currentTutorial.description }}
-        </div>
-        <div>
-          <label><strong>Status:</strong></label> {{ currentTutorial.published ? "Published" : "Pending" }}
-        </div>
-        <div>
-          <label><strong>Comments:</strong></label>
-          {{currentTutorial.comments.length}}
-        </div>
-        <a class="badge badge-warning"
-          :href="'/tutorials/' + currentTutorial.id"
-        >
-          Edit
-        </a>
-      </div>
-      <div v-else>
-        <br />
-        <p>Please click on a Tutorial...</p>
-      </div>
-    </div>
-  </div>
+  </v-row>
 </template>
 
 <script>
 import TutorialDataService from "../services/TutorialDataService";
-
 export default {
   name: "tutorials-list",
   data() {
     return {
       tutorials: [],
       totalItems: "",
-      currentTutorial: null,
-      currentIndex: -1,
       title: "",
-
+      headers: [
+        { text: "Title", align: "start", sortable: false, value: "title" },
+        { text: "Description", value: "description", sortable: false },
+        { text: "Status", value: "status", sortable: false },
+        { text: "Actions", value: "actions", sortable: false },
+      ],
       page: 1,
       count: 0,
-      pageSize: 3,
-
-      pageSizes: [3, 5, 10, 15],
+      pageSize: 5,
+      pageSizes: [5, 10, 15],
     };
   },
   methods: {
@@ -143,16 +106,15 @@ export default {
         this.searchTitle,
         this.page,
         this.pageSize
-      );    
+      );   
       TutorialDataService.getAll(params)
-        .then(response => {
-          const { tutorials, totalItems } = response.data;
-          this.tutorials = tutorials;
-          this.count = totalItems;
-          this.totalItems = totalItems;
+        .then((response) => {
+          this.tutorials = response.data.tutorials.map(this.getDisplayTutorial);
+          this.totalItems = response.data.totalItems;
+          this.count = response.data.totalItems;
           console.log(response.data);
         })
-        .catch(e => {
+        .catch((e) => {
           console.log(e);
         });
     },
@@ -167,51 +129,63 @@ export default {
       this.page = 1;
       this.retrieveTutorials();
     },
-
     refreshList() {
       this.retrieveTutorials();
-      this.currentTutorial = null;
-      this.currentIndex = -1;
-    },
-
-    setActiveTutorial(tutorial, index) {
-      this.currentTutorial = tutorial;
-      console.log(this.currentTutorial);
-      this.currentIndex = index;
     },
 
     removeAllTutorials() {
       TutorialDataService.deleteAll()
-        .then(response => {
+        .then((response) => {
           console.log(response.data);
           this.refreshList();
         })
-        .catch(e => {
+        .catch((e) => {
           console.log(e);
         });
     },
-    
+
     searchTitle() {
       TutorialDataService.findByTitle(this.title)
-        .then(response => {
-          this.tutorials = response.data;
+        .then((response) => {
+          this.tutorials = response.data.tutorials.map(this.getDisplayTutorial);
           console.log(response.data);
         })
-        .catch(e => {
+        .catch((e) => {
           console.log(e);
         });
-    }
+    },
+
+    editTutorial(id) {
+      this.$router.push({ name: "tutorial-details", params: { id: id } });
+    },
+
+    deleteTutorial(id) {
+      TutorialDataService.delete(id)
+        .then(() => {
+          this.refreshList();
+        })
+        .catch((e) => {
+          console.log(e);
+        });
+    },
+
+    getDisplayTutorial(tutorial) {
+      return {
+        id: tutorial.id,
+        title: tutorial.title.length > 30 ? tutorial.title.substr(0, 30) + "..." : tutorial.title,
+        description: tutorial.description.length > 30 ? tutorial.description.substr(0, 30) + "..." : tutorial.description,
+        status: tutorial.published ? "Published" : "Pending",
+      };
+    },
   },
   mounted() {
     this.retrieveTutorials();
-  }
+  },
 };
 </script>
 
 <style>
 .list {
-  text-align: left;
   max-width: 750px;
-  margin: auto;
 }
 </style>
